@@ -1,0 +1,74 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+
+class Mychat extends StatefulWidget {
+  Mychat({Key key}) : super(key: key);
+
+  @override
+  _MychatState createState() => _MychatState();
+}
+
+class _MychatState extends State<Mychat> {
+  //variables
+  String msg;
+  var fs = FirebaseFirestore.instance;
+  var authc = FirebaseAuth.instance;
+
+  //function
+  getmsglive() async {
+    await for (var ss in fs.collection("chat").snapshots()) {
+      for (var docs in ss.docs) {
+        print(docs.data());
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          actions: [
+            IconButton(
+                icon: Icon(Icons.close),
+                onPressed: () async {
+                  await authc.signOut();
+                  Navigator.pushNamed(context, "login");
+                })
+          ],
+          title: Text("chat here"),
+        ),
+        body: Column(
+          children: [
+            TextField(
+              onChanged: (value) {
+                msg = value;
+              },
+            ),
+            FlatButton(
+                onPressed: () async {
+                  await fs.collection('chat').add({
+                    "text": msg,
+                    "sender": authc.currentUser.email,
+                  });
+                },
+                child: Text("send")),
+            FlatButton(
+                onPressed: () {
+                  getmsglive();
+                },
+                child: Text("get stream")),
+            FlatButton(
+                onPressed: () async {
+                  var msgdoc = await fs.collection('chat').get();
+                  for (var i in msgdoc.docs) {
+                    print(i.data());
+                  }
+                },
+                child: Text("get")),
+          ],
+        ));
+  }
+}
